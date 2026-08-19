@@ -3,8 +3,8 @@ from rag.vectorstore import search
 
 
 question = """
-What are the major recommendations for cardiovascular
-disease management in primary health care?
+What is the HEARTS technical package and what is its purpose
+in primary health care?
 """
 
 
