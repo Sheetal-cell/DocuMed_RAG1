@@ -1,4 +1,4 @@
-import fitz
+import pymupdf
 from pathlib import Path
 
 
@@ -9,7 +9,7 @@ def load_pdf(pdf_path: str):
     Returns a list of pages with their page numbers.
     """
 
-    document = fitz.open(pdf_path)
+    document = pymupdf.open(pdf_path)
 
     pages = []
 

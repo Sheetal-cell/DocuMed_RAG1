@@ -1,5 +1,6 @@
 from rag.loader import load_pdf
 from rag.chunker import chunk_text
+from rag.embeddings import embed_texts
 
 
 PDF_PATH = "data/documents/heart.pdf"
@@ -25,14 +26,17 @@ for page in pages:
         })
 
 
-print("Pages:", len(pages))
-print("Total chunks:", len(all_chunks))
+texts = [
+    chunk["text"]
+    for chunk in all_chunks
+]
 
-for i, chunk in enumerate(all_chunks[:3]):
+embeddings = embed_texts(texts)
 
-    print("\n==============================")
-    print("CHUNK:", i)
-    print("SOURCE:", chunk["source"])
-    print("PAGE:", chunk["page"])
-    print("==============================")
-    print(chunk["text"][:1000])
+print("Chunks:", len(texts))
+print("Embeddings:", len(embeddings))
+
+print("Embedding dimension:", len(embeddings[0]))
+
+print("\nFirst embedding:")
+print(embeddings[0][:10])
