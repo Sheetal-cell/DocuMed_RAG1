@@ -20,7 +20,8 @@ import "./App.css";
 interface Source {
   source: string;
   page: number;
-  distance: number;
+  similarity: number;
+  chunk: string;
 }
 
 interface ApiResponse {
@@ -457,24 +458,41 @@ function App() {
                           {message.sources.map(
                             (source, sourceIndex) => (
 
-                              <div
-                                className="source"
-                                key={sourceIndex}
-                              >
-                                <FileText size={15} />
+                              <div className="source" key={sourceIndex}>
 
-                                <span>
-                                  {source.source}
-                                </span>
+  <div className="source-header">
 
-                                <span className="page">
-                                  Page {source.page}
-                                </span>
+    <div className="source-file">
+      <FileText size={15} />
 
-                                 <span className="distance">
-    Distance {source.distance.toFixed(4)}
-  </span>
-                              </div>
+      <span>
+        {source.source}
+      </span>
+    </div>
+
+    <span className="page">
+      Page {source.page}
+    </span>
+
+  </div>
+
+  <div className="source-meta">
+
+    <span className="similarity">
+      Similarity: {(source.similarity * 100).toFixed(1)}%
+    </span>
+
+  </div>
+
+  <div className="chunk-details">
+    <strong>Retrieved chunk</strong>
+
+    <p>
+      {source.chunk}
+    </p>
+  </div>
+
+</div>
 
                             )
                           )}

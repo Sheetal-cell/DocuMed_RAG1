@@ -74,16 +74,20 @@ def ask_question(request: QuestionRequest):
     # Prepare source information
     sources = []
 
-    for metadata, distance in zip(
+    for metadata, distance, chunk_text in zip(
         result["metadata"],
-        result["distances"]
+        result["distances"],
+        result["documents"]
     ):
+        # Chroma distance → similarity
+        similarity = 1 - float(distance)
 
-        sources.append({
-            "source": metadata["source"],
-            "page": metadata["page"],
-            "distance": round(float(distance), 4)
-        })
+    sources.append({
+        "source": metadata["source"],
+        "page": metadata["page"],
+        "similarity": round(similarity, 4),
+        "chunk": chunk_text
+    })
 
     return {
         "question": question,
