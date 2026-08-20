@@ -478,9 +478,10 @@ function App() {
 
   <div className="source-meta">
 
-    <span className="similarity">
-      Similarity: {(source.similarity * 100).toFixed(1)}%
-    </span>
+    
+<span className="similarity">
+  {Math.round(source.similarity * 100)}% match
+</span>
 
   </div>
 

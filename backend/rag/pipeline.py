@@ -42,16 +42,23 @@ def create_rag_prompt(question, top_k=3):
     }
 
 
-def create_sources(metadata, distances):
+def create_sources(metadata, distances, documents):
 
     sources = []
 
-    for meta, distance in zip(metadata, distances):
+    for meta, distance, document in zip(
+        metadata,
+        distances,
+        documents
+    ):
+
+        similarity = 1 - float(distance)
 
         sources.append({
             "source": meta["source"],
             "page": meta["page"],
-            "distance": round(float(distance), 4)
+            "similarity": round(similarity, 4),
+            "chunk": document
         })
 
     return sources
