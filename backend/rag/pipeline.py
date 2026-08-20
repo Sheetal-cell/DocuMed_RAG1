@@ -2,9 +2,10 @@ from backend.rag.embeddings import embed_query
 from backend.rag.vectorstore import search
 from backend.rag.prompt import build_prompt
 
+
 def retrieve_context(question, top_k=3):
 
-    # Convert question to embedding
+    # Convert question into embedding
     query_embedding = embed_query(question)
 
     # Search vector database
@@ -14,19 +15,17 @@ def retrieve_context(question, top_k=3):
     )
 
     documents = results["documents"][0]
-
     metadata = results["metadatas"][0]
-
     distances = results["distances"][0]
 
     return documents, metadata, distances
 
 
-def create_rag_prompt(question):
+def create_rag_prompt(question, top_k=3):
 
     documents, metadata, distances = retrieve_context(
         question,
-        top_k=3
+        top_k=top_k
     )
 
     prompt = build_prompt(
@@ -41,3 +40,18 @@ def create_rag_prompt(question):
         "metadata": metadata,
         "distances": distances
     }
+
+
+def create_sources(metadata, distances):
+
+    sources = []
+
+    for meta, distance in zip(metadata, distances):
+
+        sources.append({
+            "source": meta["source"],
+            "page": meta["page"],
+            "distance": round(float(distance), 4)
+        })
+
+    return sources

@@ -23,7 +23,7 @@ print("Loading Qwen 0.5B model...")
 
 model = AutoModelForCausalLM.from_pretrained(
     MODEL_NAME,
-    torch_dtype=torch.float32
+    dtype=torch.float32
 )
 
 model.eval()
@@ -37,13 +37,20 @@ def generate_answer(prompt):
         {
             "role": "system",
             "content": (
-                "You are DocuMed, a medical information assistant. "
-                "Answer ONLY using the context provided by the user. "
-                "Do not use outside knowledge. "
-                "If the answer cannot be found in the context, say exactly: "
-                "\"I could not find this information in the provided documents.\" "
-                "Do not diagnose users. "
-                "Do not prescribe medication."
+                "You are DocuMed, a medical information assistant.\n\n"
+
+                "STRICT RULES:\n"
+                "1. Answer ONLY from the medical context provided by the user.\n"
+                "2. Do not use outside knowledge.\n"
+                "3. Do not invent, assume, or add medical facts.\n"
+                "4. Answer the exact question asked.\n"
+                "5. Keep the answer concise and easy to understand.\n"
+                "6. Include the source and page when the context provides them.\n"
+                "7. Do not diagnose.\n"
+                "8. Do not prescribe medicines or dosages.\n"
+                "9. Do not make personalized treatment decisions.\n"
+                "10. If the information is not present in the context, respond exactly:\n"
+                "\"I could not find this information in the provided documents.\"\n"
             )
         },
         {
@@ -67,14 +74,12 @@ def generate_answer(prompt):
 
         outputs = model.generate(
             **inputs,
-            max_new_tokens=200,
+            max_new_tokens=180,
             do_sample=False,
             pad_token_id=tokenizer.eos_token_id
         )
 
-    generated_tokens = outputs[
-        0
-    ][
+    generated_tokens = outputs[0][
         inputs["input_ids"].shape[1]:
     ]
 

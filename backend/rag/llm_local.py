@@ -24,10 +24,11 @@ print("Loading base Qwen model...")
 
 model = AutoModelForCausalLM.from_pretrained(
     BASE_MODEL,
-    dtype=torch.float32,
-    device_map="auto",
+    torch_dtype=torch.float32,
     low_cpu_mem_usage=True
 )
+
+model = model.to("cpu")
 
 
 print("Loading DocuMed LoRA adapter...")
@@ -36,7 +37,6 @@ model = PeftModel.from_pretrained(
     model,
     ADAPTER_PATH
 )
-
 
 model.eval()
 
@@ -48,7 +48,12 @@ def generate_answer(prompt):
     inputs = tokenizer(
         prompt,
         return_tensors="pt"
-    ).to(model.device)
+    )
+
+    inputs = {
+        key: value.to("cpu")
+        for key, value in inputs.items()
+    }
 
     with torch.no_grad():
 
@@ -56,14 +61,17 @@ def generate_answer(prompt):
             **inputs,
             max_new_tokens=300,
             temperature=0.2,
-            do_sample=True
+            do_sample=True,
+            repetition_penalty=1.1
         )
 
-    generated_tokens = outputs[0][inputs["input_ids"].shape[1]:]
+    generated_tokens = outputs[0][
+        inputs["input_ids"].shape[1]:
+    ]
 
     answer = tokenizer.decode(
         generated_tokens,
         skip_special_tokens=True
     )
 
-    return answer
+    return answer.strip()

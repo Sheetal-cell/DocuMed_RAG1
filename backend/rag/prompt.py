@@ -9,40 +9,52 @@ def build_prompt(question, retrieved_documents, retrieved_metadata):
         text = retrieved_documents[i]
 
         context_parts.append(
-            f"[Source: {source}, Page: {page}]\n"
+            f"--- DOCUMENT {i + 1} ---\n"
+            f"Source: {source}\n"
+            f"Page: {page}\n\n"
             f"{text}"
         )
 
     context = "\n\n".join(context_parts)
 
-
     prompt = f"""
-You are DocuMed, a medical information assistant.
-
-Your job is to answer questions using ONLY the provided
-medical context.
-
-Rules:
-
-1. Do not invent medical facts.
-2. If the answer is not present in the context, say:
-   "I could not find this information in the provided documents."
-3. Give a clear and concise answer.
-4. Mention the source document and page when possible.
-5. Do not diagnose the user.
-6. Do not prescribe medication.
-7. For emergencies, advise the user to seek immediate
-   professional medical care.
-
-Medical Context:
+MEDICAL DOCUMENT CONTEXT:
 
 {context}
 
-User Question:
+
+USER QUESTION:
 
 {question}
 
-Answer:
+
+INSTRUCTIONS:
+
+Answer the user's question using ONLY the medical document
+context above.
+
+Do not use information from outside the documents.
+
+If the answer is present in the documents:
+- Answer directly.
+- Keep the answer concise.
+- Use the exact information supported by the documents.
+- Include the relevant source and page.
+
+Format the source citation like:
+
+(Source: heart.pdf, Page: 8)
+
+If the answer cannot be found in the provided documents,
+respond exactly:
+
+"I could not find this information in the provided documents."
+
+Do not diagnose.
+Do not prescribe medication.
+Do not provide personalized treatment decisions.
+
+ANSWER:
 """
 
     return prompt
