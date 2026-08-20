@@ -41,6 +41,78 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [uploadStatus, setUploadStatus] = useState("");
+  const [uploadedFile, setUploadedFile] = useState<string | null>(null);
+
+  const uploadPdf = (file: File) => {
+  if (file.type !== "application/pdf") {
+    alert("Please select a PDF file.");
+    return;
+  }
+
+  setUploading(true);
+  setUploadProgress(0);
+  setUploadStatus("Uploading PDF...");
+  setUploadedFile(null);
+
+  const xhr = new XMLHttpRequest();
+
+  xhr.open(
+    "POST",
+    "http://127.0.0.1:8000/upload"
+  );
+
+  xhr.upload.onprogress = (event) => {
+    if (event.lengthComputable) {
+      const percent = Math.round(
+        (event.loaded / event.total) * 100
+      );
+
+      setUploadProgress(percent);
+
+      if (percent === 100) {
+        setUploadStatus("Processing PDF...");
+      }
+    }
+  };
+
+  xhr.onload = () => {
+    if (xhr.status >= 200 && xhr.status < 300) {
+      setUploadProgress(100);
+      setUploadStatus("PDF ready ✓");
+
+      try {
+        const data = JSON.parse(xhr.responseText);
+
+        setUploadedFile(
+          data.filename || file.name
+        );
+      } catch {
+        setUploadedFile(file.name);
+      }
+
+      setTimeout(() => {
+        setUploading(false);
+      }, 1200);
+    } else {
+      setUploadStatus("Upload failed");
+      setUploading(false);
+    }
+  };
+
+  xhr.onerror = () => {
+    setUploadStatus("Unable to connect to DocuMed backend.");
+    setUploading(false);
+  };
+
+  const formData = new FormData();
+
+  formData.append("file", file);
+
+  xhr.send(formData);
+};
 
   const askQuestion = async (customQuestion?: string) => {
     const query = (customQuestion ?? question).trim();
@@ -99,71 +171,7 @@ function App() {
     }
   };
 
-  const uploadPdf = async (
-  event: React.ChangeEvent<HTMLInputElement>
-) => {
-
-  const file = event.target.files?.[0];
-
-  if (!file) return;
-
-  if (file.type !== "application/pdf") {
-
-    alert("Please select a PDF file.");
-
-    return;
-  }
-
-  setLoading(true);
-
-  try {
-
-    const formData = new FormData();
-
-    formData.append("file", file);
-
-    const response = await fetch(
-      "http://127.0.0.1:8000/upload",
-      {
-        method: "POST",
-        body: formData,
-      }
-    );
-
-    if (!response.ok) {
-      throw new Error("Upload failed.");
-    }
-
-    const data = await response.json();
-
-    if (!data.success) {
-      throw new Error(
-        data.message || "Unable to process PDF."
-      );
-    }
-
-    alert(
-      `${data.filename} uploaded successfully.\n\n` +
-      `${data.chunks} text chunks added to the knowledge base.`
-    );
-
-  } catch (error) {
-
-    console.error(error);
-
-    alert(
-      "Unable to upload the PDF. " +
-      "Please make sure the DocuMed backend is running."
-    );
-
-  } finally {
-
-    setLoading(false);
-
-    // Allow the same file to be selected again
-    event.target.value = "";
-  }
-};
+  
 
   const copyAnswer = async (text: string) => {
     await navigator.clipboard.writeText(text);
@@ -219,37 +227,77 @@ function App() {
           New conversation
         </button>
 
-        <label className="upload-pdf">
-  <FileText size={18} />
-  Upload PDF
-
-  <input
-    type="file"
-    accept=".pdf,application/pdf"
-    onChange={uploadPdf}
-    hidden
-  />
-</label>
+        
 
         <div className="sidebar-section">
-          <p className="section-title">
-            <BookOpen size={15} />
-            KNOWLEDGE BASE
-          </p>
+  <p className="section-title">
+    <BookOpen size={15} />
+    KNOWLEDGE BASE
+  </p>
 
-          <div className="document-card">
-            <div className="document-icon">
-              <FileText size={20} />
-            </div>
+  <label className="upload-button">
+    <FileText size={17} />
+    Upload PDF
 
-            <div>
-              <strong>heart.pdf</strong>
-              <span>Cardiovascular protocols</span>
-            </div>
+    <input
+      type="file"
+      accept=".pdf,application/pdf"
+      hidden
+      onChange={(e) => {
+        const file = e.target.files?.[0];
 
-            <div className="status-dot" />
-          </div>
-        </div>
+        if (file) {
+          uploadPdf(file);
+        }
+
+        e.target.value = "";
+      }}
+    />
+  </label>
+
+  {uploading && (
+    <div className="upload-progress-card">
+
+      <div className="upload-progress-header">
+        <span>{uploadStatus}</span>
+        <strong>{uploadProgress}%</strong>
+      </div>
+
+      <div className="progress-bar">
+        <div
+          className="progress-fill"
+          style={{
+            width: `${uploadProgress}%`,
+          }}
+        />
+      </div>
+
+      <small>
+        {uploadProgress < 100
+          ? "Uploading document..."
+          : "Indexing document for RAG..."}
+      </small>
+
+    </div>
+  )}
+
+  {uploadedFile && !uploading && (
+    <div className="document-card">
+
+      <div className="document-icon">
+        <FileText size={20} />
+      </div>
+
+      <div>
+        <strong>{uploadedFile}</strong>
+        <span>Document ready for questions</span>
+      </div>
+
+      <div className="status-dot" />
+
+    </div>
+  )}
+</div>
 
         <div className="sidebar-bottom">
           <div className="safety-card">
