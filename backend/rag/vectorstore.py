@@ -15,8 +15,8 @@ collection = client.get_or_create_collection(
 def add_documents(chunks, embeddings):
 
     ids = [
-        f"chunk_{uuid.uuid4().hex}"
-        for _ in chunks
+        f"{chunk['source']}_page_{chunk['page']}_chunk_{i}"
+        for i, chunk in enumerate(chunks)
     ]
 
     documents = [
@@ -40,7 +40,6 @@ def add_documents(chunks, embeddings):
     )
 
     return len(chunks)
-
 
 def search(query_embedding, top_k=5):
 
