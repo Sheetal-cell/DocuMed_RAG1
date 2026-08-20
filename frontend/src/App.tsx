@@ -44,74 +44,61 @@ function App() {
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadStatus, setUploadStatus] = useState("");
-  const [uploadedFile, setUploadedFile] = useState<string | null>(null);
+  const [uploadedFile, setUploadedFile] = useState<string[]>([]);
 
-  const uploadPdf = (file: File) => {
-  if (file.type !== "application/pdf") {
-    alert("Please select a PDF file.");
-    return;
-  }
+  const uploadFiles = async (files: File[]) => {
+  if (!files.length) return;
 
   setUploading(true);
   setUploadProgress(0);
-  setUploadStatus("Uploading PDF...");
-  setUploadedFile(null);
+  setUploadStatus("Uploading files...");
 
-  const xhr = new XMLHttpRequest();
+  try {
+    const total = files.length;
 
-  xhr.open(
-    "POST",
-    "http://127.0.0.1:8000/upload"
-  );
+    for (let i = 0; i < total; i++) {
+      const file = files[i];
 
-  xhr.upload.onprogress = (event) => {
-    if (event.lengthComputable) {
-      const percent = Math.round(
-        (event.loaded / event.total) * 100
-      );
+      const formData = new FormData();
+      formData.append("file", file);
 
-      setUploadProgress(percent);
+      setUploadStatus(`Uploading ${file.name}...`);
 
-      if (percent === 100) {
-        setUploadStatus("Processing PDF...");
-      }
-    }
-  };
+      const response = await fetch("http://127.0.0.1:8000/upload", {
+        method: "POST",
+        body: formData,
+      });
 
-  xhr.onload = () => {
-    if (xhr.status >= 200 && xhr.status < 300) {
-      setUploadProgress(100);
-      setUploadStatus("PDF ready ✓");
-
-      try {
-        const data = JSON.parse(xhr.responseText);
-
-        setUploadedFile(
-          data.filename || file.name
-        );
-      } catch {
-        setUploadedFile(file.name);
+      if (!response.ok) {
+        throw new Error(`Failed to upload ${file.name}`);
       }
 
-      setTimeout(() => {
-        setUploading(false);
-      }, 1200);
-    } else {
-      setUploadStatus("Upload failed");
-      setUploading(false);
-    }
-  };
+      const data = await response.json();
 
-  xhr.onerror = () => {
-    setUploadStatus("Unable to connect to DocuMed backend.");
+      if (!data.success) {
+        throw new Error(data.message || `Failed to upload ${file.name}`);
+      }
+
+      setUploadedFile((prev) => [...prev, file.name]);
+
+      const progress = Math.round(((i + 1) / total) * 100);
+      setUploadProgress(progress);
+    }
+
+    setUploadStatus(
+      `${total} file${total > 1 ? "s" : ""} uploaded successfully`
+    );
+  } catch (error) {
+    console.error(error);
+
+    setUploadStatus(
+      error instanceof Error
+        ? error.message
+        : "Upload failed."
+    );
+  } finally {
     setUploading(false);
-  };
-
-  const formData = new FormData();
-
-  formData.append("file", file);
-
-  xhr.send(formData);
+  }
 };
 
   const askQuestion = async (customQuestion?: string) => {
@@ -193,6 +180,7 @@ function App() {
     "What are the main modules of HEARTS?",
   ];
 
+
   return (
     <div className="app">
 
@@ -236,24 +224,42 @@ function App() {
   </p>
 
   <label className="upload-button">
-    <FileText size={17} />
-    Upload PDF
+  <FileText size={18} />
+  Upload PDFs
 
-    <input
-      type="file"
-      accept=".pdf,application/pdf"
-      hidden
-      onChange={(e) => {
-        const file = e.target.files?.[0];
+  <input
+    type="file"
+    accept=".pdf,application/pdf"
+    multiple
+    hidden
+    onChange={(e) => {
+      const files = Array.from(e.target.files || []);
 
-        if (file) {
-          uploadPdf(file);
-        }
+      if (files.length > 0) {
+        uploadFiles(files);
+      }
 
-        e.target.value = "";
-      }}
-    />
-  </label>
+      e.target.value = "";
+    }}
+  />
+</label>
+
+{uploading && (
+  <div className="upload-progress">
+    <div className="upload-status">
+      {uploadStatus}
+    </div>
+
+    <div className="progress-bar">
+      <div
+        className="progress-fill"
+        style={{ width: `${uploadProgress}%` }}
+      />
+    </div>
+
+    <span>{uploadProgress}%</span>
+  </div>
+)}
 
   {uploading && (
     <div className="upload-progress-card">
