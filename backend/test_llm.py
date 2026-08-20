@@ -1,4 +1,4 @@
-from rag.llm import generate_answer
+from backend.rag.llm_local import generate_answer
 
 
 prompt = """

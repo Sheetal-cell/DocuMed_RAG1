@@ -1,5 +1,5 @@
 from rag.pipeline import create_rag_prompt
-from rag.llm import generate_answer
+from rag.llm_local_small import generate_answer
 
 
 question = """
@@ -41,26 +41,16 @@ print("========================================")
 
 print(result["prompt"])
 
-
-# ========================================
-# STEP 3 — SEND PROMPT TO QWEN
-# ========================================
-
 print("\n========================================")
-print("GENERATING ANSWER...")
+print("DOCUMED ANSWER")
 print("========================================")
 
 answer = generate_answer(
     result["prompt"]
 )
 
-
-# ========================================
-# STEP 4 — DISPLAY ANSWER
-# ========================================
-
-print("\n========================================")
-print("DOCUMED ANSWER")
-print("========================================")
-
 print(answer)
+
+
+
+

@@ -9,18 +9,22 @@ from transformers import (
 MODEL_NAME = "Qwen/Qwen2.5-0.5B-Instruct"
 
 
-print("Loading DocuMed local LLM...")
+print("========================================")
+print("Loading local DocuMed LLM")
+print("========================================")
+
+print("Loading tokenizer...")
 
 tokenizer = AutoTokenizer.from_pretrained(
     MODEL_NAME
 )
 
+print("Loading Qwen 0.5B model...")
 
 model = AutoModelForCausalLM.from_pretrained(
     MODEL_NAME,
     torch_dtype=torch.float32
 )
-
 
 model.eval()
 
@@ -34,10 +38,12 @@ def generate_answer(prompt):
             "role": "system",
             "content": (
                 "You are DocuMed, a medical information assistant. "
-                "Answer using ONLY the provided context. "
-                "If the answer is not present in the context, say: "
+                "Answer ONLY using the context provided by the user. "
+                "Do not use outside knowledge. "
+                "If the answer cannot be found in the context, say exactly: "
                 "\"I could not find this information in the provided documents.\" "
-                "Do not diagnose users or prescribe medication."
+                "Do not diagnose users. "
+                "Do not prescribe medication."
             )
         },
         {
