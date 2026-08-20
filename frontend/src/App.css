@@ -660,3 +660,10 @@ button {
     gap: 9px;
   }
 }
+
+.distance {
+  margin-left: auto;
+  font-size: 12px;
+  opacity: 0.65;
+  white-space: nowrap;
+}

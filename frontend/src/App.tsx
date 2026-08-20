@@ -338,6 +338,10 @@ function App() {
                                 <span className="page">
                                   Page {source.page}
                                 </span>
+
+                                 <span className="distance">
+    Distance {source.distance.toFixed(4)}
+  </span>
                               </div>
 
                             )
