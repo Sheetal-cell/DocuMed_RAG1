@@ -1,9 +1,16 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
+import os
+import shutil
+
 from backend.rag.pipeline import create_rag_prompt
 from backend.rag.llm_local_small import generate_answer
+
+from backend.rag.pdf_processor import extract_pdf_chunks
+from backend.rag.embeddings import embed_texts
+from backend.rag.vectorstore import add_documents
 
 
 app = FastAPI(
@@ -29,12 +36,21 @@ class QuestionRequest(BaseModel):
     question: str
 
 
+# ========================================
+# ROOT
+# ========================================
+
 @app.get("/")
 def root():
+
     return {
         "message": "DocuMed RAG API is running"
     }
 
+
+# ========================================
+# ASK QUESTION
+# ========================================
 
 @app.post("/ask")
 def ask_question(request: QuestionRequest):
@@ -42,6 +58,7 @@ def ask_question(request: QuestionRequest):
     question = request.question.strip()
 
     if not question:
+
         return {
             "error": "Question cannot be empty"
         }
@@ -61,6 +78,7 @@ def ask_question(request: QuestionRequest):
         result["metadata"],
         result["distances"]
     ):
+
         sources.append({
             "source": metadata["source"],
             "page": metadata["page"],
@@ -71,4 +89,92 @@ def ask_question(request: QuestionRequest):
         "question": question,
         "answer": answer,
         "sources": sources
+    }
+
+
+# ========================================
+# UPLOAD PDF
+# ========================================
+
+@app.post("/upload")
+async def upload_pdf(
+    file: UploadFile = File(...)
+):
+
+    # Check file type
+    if not file.filename.lower().endswith(".pdf"):
+
+        return {
+            "success": False,
+            "message": "Only PDF files are supported."
+        }
+
+
+    # Create upload directory
+    upload_directory = "data/uploads"
+
+    os.makedirs(
+        upload_directory,
+        exist_ok=True
+    )
+
+
+    # Save PDF
+    file_path = os.path.join(
+        upload_directory,
+        file.filename
+    )
+
+
+    with open(file_path, "wb") as buffer:
+
+        shutil.copyfileobj(
+            file.file,
+            buffer
+        )
+
+
+    # Extract text and create chunks
+    chunks = extract_pdf_chunks(
+        pdf_path=file_path,
+        source_name=file.filename
+    )
+
+
+    if not chunks:
+
+        return {
+            "success": False,
+            "message": "Could not extract readable text from this PDF."
+        }
+
+
+    # Create embeddings
+    texts = [
+        chunk["text"]
+        for chunk in chunks
+    ]
+
+    embeddings = embed_texts(texts)
+
+
+    # Store in Chroma
+    number_of_chunks = add_documents(
+        chunks,
+        embeddings
+    )
+
+
+    return {
+        "success": True,
+        "filename": file.filename,
+        "pages": len(set(
+            chunk["page"]
+            for chunk in chunks
+        )),
+        "chunks": number_of_chunks,
+        "message": (
+            f"{file.filename} uploaded and added "
+            "to the DocuMed knowledge base."
+        )
     }

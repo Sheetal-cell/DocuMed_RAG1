@@ -1,3 +1,5 @@
+import uuid
+
 import chromadb
 
 
@@ -13,8 +15,8 @@ collection = client.get_or_create_collection(
 def add_documents(chunks, embeddings):
 
     ids = [
-        f"chunk_{i}"
-        for i in range(len(chunks))
+        f"chunk_{uuid.uuid4().hex}"
+        for _ in chunks
     ]
 
     documents = [
@@ -37,8 +39,10 @@ def add_documents(chunks, embeddings):
         metadatas=metadatas
     )
 
+    return len(chunks)
 
-def search(query_embedding, top_k=3):
+
+def search(query_embedding, top_k=5):
 
     results = collection.query(
         query_embeddings=[query_embedding],

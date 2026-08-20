@@ -99,6 +99,72 @@ function App() {
     }
   };
 
+  const uploadPdf = async (
+  event: React.ChangeEvent<HTMLInputElement>
+) => {
+
+  const file = event.target.files?.[0];
+
+  if (!file) return;
+
+  if (file.type !== "application/pdf") {
+
+    alert("Please select a PDF file.");
+
+    return;
+  }
+
+  setLoading(true);
+
+  try {
+
+    const formData = new FormData();
+
+    formData.append("file", file);
+
+    const response = await fetch(
+      "http://127.0.0.1:8000/upload",
+      {
+        method: "POST",
+        body: formData,
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error("Upload failed.");
+    }
+
+    const data = await response.json();
+
+    if (!data.success) {
+      throw new Error(
+        data.message || "Unable to process PDF."
+      );
+    }
+
+    alert(
+      `${data.filename} uploaded successfully.\n\n` +
+      `${data.chunks} text chunks added to the knowledge base.`
+    );
+
+  } catch (error) {
+
+    console.error(error);
+
+    alert(
+      "Unable to upload the PDF. " +
+      "Please make sure the DocuMed backend is running."
+    );
+
+  } finally {
+
+    setLoading(false);
+
+    // Allow the same file to be selected again
+    event.target.value = "";
+  }
+};
+
   const copyAnswer = async (text: string) => {
     await navigator.clipboard.writeText(text);
 
@@ -152,6 +218,18 @@ function App() {
           <Sparkles size={18} />
           New conversation
         </button>
+
+        <label className="upload-pdf">
+  <FileText size={18} />
+  Upload PDF
+
+  <input
+    type="file"
+    accept=".pdf,application/pdf"
+    onChange={uploadPdf}
+    hidden
+  />
+</label>
 
         <div className="sidebar-section">
           <p className="section-title">
