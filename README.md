@@ -725,271 +725,48 @@ http://localhost:5173/
 
 Avoid committing generated environments and caches:
 
-```text
-.venv/
-__pycache__/
-*.pyc
-.env
+# 27. show the index/chunks from the Python terminal:
 ```
-
-Large model files and vector databases should also be considered carefully before committing them to GitHub.
-
-Use an appropriate model/file-storage strategy for deployment.
-
----
-
-
-### 🔍 Inspecting Vectors & Vector Index
-
-DocuMed uses **ChromaDB** as its persistent vector database and
-`sentence-transformers/all-MiniLM-L6-v2` for generating embeddings.
-
-Each PDF chunk is converted into a **384-dimensional embedding vector**
-and stored in ChromaDB along with its source PDF and page number.
-
-### 📁 Vector Database Location
-
-The persistent ChromaDB database is stored locally at:
-
-```text
-data/
-└── chroma/
-
-The vector database is initialized in:
-
 from backend.rag.vectorstore import collection
-
-
-collection = client.get_or_create_collection(
-    name="documed_documents"
-)
-
-🧮 View Stored Vectors
-
-To inspect the vectors stored in ChromaDB, open a Python terminal from
-the project root and run:
-
-from backend.rag.vectorstore import collection
-
-
-data = collection.get(
-    include=["documents", "embeddings", "metadatas"]
-)
-
-
-print("Number of chunks:", len(data["ids"]))
-
-
-print("\nFirst chunk:")
-print(data["documents"][0])
-
-
-print("\nMetadata:")
-print(data["metadatas"][0])
-
-
-print("\nVector:")
-print(data["embeddings"][0])
-
-
-print("\nVector dimensions:")
-print(len(data["embeddings"][0]))
-Example Output
-Number of chunks: 147
-
-
-First chunk:
-HEARTS Technical Package More people die each year from cardiovascular diseases...
-
-
-Metadata:
-{'source': 'heart.pdf', 'page': 8}
-
-
-Vector:
-[0.0342, -0.0178, 0.0912, ...]
-
-
-Vector dimensions:
-384
-
-The vector contains 384 numerical values because the
-all-MiniLM-L6-v2 embedding model produces 384-dimensional embeddings.
-
-🗂️ View Stored Chunks and Metadata
-
-Each vector is associated with the original document chunk and its
-metadata.
-
-Run:
-
-from backend.rag.vectorstore import collection
-
 
 data = collection.get(
     include=["documents", "metadatas"]
 )
 
+print("Number of chunks:", len(data["ids"]))
 
-for i in range(min(5, len(data["ids"]))):
+print("\nFirst chunk:")
+print(data["documents"][0])
 
+print("\nMetadata:")
+print(data["metadatas"][0])
+```
 
-    print("\n==============================")
-    print("Chunk ID:", data["ids"][i])
-    print("Source:", data["metadatas"][i]["source"])
-    print("Page:", data["metadatas"][i]["page"])
-    print("Text:")
-    print(data["documents"][i])
+# 28. Show the vector
 
-This allows inspection of the relationship between:
+```
+from backend.rag.embeddings import embed_texts
 
-PDF
- ↓
-Page
- ↓
-Text Chunk
- ↓
-Embedding Vector
- ↓
-Vector Database
-🔎 Inspect Vector Similarity Search
+text = ["This is a sample medical document chunk."]
 
-DocuMed converts the user's question into an embedding and searches
-ChromaDB for the most relevant chunks.
+vector = embed_texts(text)[0]
 
-To inspect this process directly:
+print("Vector:")
+print(vector)
 
-from backend.rag.embeddings import embed_query
-from backend.rag.vectorstore import search
+print("\nVector dimensions:")
+print(len(vector))
+```
 
+# 29. for the index
 
-question = "What are the six modules of the HEARTS technical package?"
+```
+from backend.rag.vectorstore import collection
 
+print(collection.name)
+print(collection.count())
+```
 
-# Convert question into an embedding
-query_vector = embed_query(question)
-
-
-print("Query vector:")
-print(query_vector)
-
-
-print("\nQuery vector dimensions:")
-print(len(query_vector))
-
-
-# Search the vector database
-results = search(
-    query_vector,
-    top_k=3
-)
-
-
-print("\nRetrieved chunks:")
-
-
-for i in range(3):
-
-
-    print("\n-----------------------------")
-    print("Rank:", i + 1)
-
-
-    print("Distance:",
-          results["distances"][0][i])
-
-
-    print("Metadata:",
-          results["metadatas"][0][i])
-
-
-    print("Chunk:")
-    print(results["documents"][0][i])
-Example Output
-Query vector:
-[0.0123, -0.0456, 0.0789, ...]
-
-
-Query vector dimensions:
-384
-
-
-Retrieved chunks:
-
-
------------------------------
-Rank: 1
-
-
-Distance: 0.71
-
-
-Metadata:
-{'source': 'heart.pdf', 'page': 8}
-
-
-Chunk:
-HEARTS Technical Package...
-
-
------------------------------
-Rank: 2
-
-
-Distance: 0.83
-
-
-Metadata:
-{'source': 'heart.pdf', 'page': 7}
-
-
-Chunk:
-Acknowledgements...
-
-
------------------------------
-Rank: 3
-
-
-Distance: 0.91
-
-
-Metadata:
-{'source': 'heart.pdf', 'page': 8}
-
-
-Chunk:
-HEARTS technical package...
-🧠 Understanding the Retrieval Process
-
-The complete retrieval pipeline works as follows:
-
-User Question
-      │
-      ▼
-Embedding Model
-(all-MiniLM-L6-v2)
-      │
-      ▼
-384-Dimensional Query Vector
-      │
-      ▼
-ChromaDB Vector Search
-      │
-      ▼
-Top-K Similar Chunks
-      │
-      ▼
-Retrieved Documents + Metadata
-      │
-      ▼
-Prompt Construction
-      │
-      ▼
-Qwen Local LLM
-      │
-      ▼
-Final Answer
 
 ## DocuMed
 
