@@ -1,7 +1,6 @@
-from rag.embeddings import embed_query
-from rag.vectorstore import search
-from rag.prompt import build_prompt
-
+from backend.rag.embeddings import embed_query
+from backend.rag.vectorstore import search
+from backend.rag.prompt import build_prompt
 
 def retrieve_context(question, top_k=3):
 
