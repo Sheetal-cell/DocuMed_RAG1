@@ -12,6 +12,7 @@ app = FastAPI(
     version="1.0.0"
 )
 
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
@@ -30,7 +31,6 @@ class QuestionRequest(BaseModel):
 
 @app.get("/")
 def root():
-
     return {
         "message": "DocuMed RAG API is running"
     }
@@ -42,21 +42,17 @@ def ask_question(request: QuestionRequest):
     question = request.question.strip()
 
     if not question:
-
         return {
             "error": "Question cannot be empty"
         }
 
-
     # Retrieve relevant documents
     result = create_rag_prompt(question)
 
-
-    # Generate answer
+    # Generate answer using local Qwen
     answer = generate_answer(
         result["prompt"]
     )
-
 
     # Prepare source information
     sources = []
@@ -65,13 +61,11 @@ def ask_question(request: QuestionRequest):
         result["metadata"],
         result["distances"]
     ):
-
         sources.append({
             "source": metadata["source"],
             "page": metadata["page"],
             "distance": round(float(distance), 4)
         })
-
 
     return {
         "question": question,
