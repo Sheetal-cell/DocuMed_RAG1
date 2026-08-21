@@ -5,12 +5,17 @@ from pydantic import BaseModel
 import os
 import shutil
 
+from backend.graph_rag import graph_retriever
 from backend.rag.pipeline import create_rag_prompt
 from backend.rag.llm_local_small import generate_answer
 
 from backend.rag.pdf_processor import extract_pdf_chunks
 from backend.rag.embeddings import embed_texts
 from backend.rag.vectorstore import add_documents
+
+
+from backend.graph_rag.graph_builder import build_graph
+from backend.graph_rag.graph_pipeline import graph_answer
 
 
 app = FastAPI(
@@ -35,6 +40,8 @@ app.add_middleware(
 class QuestionRequest(BaseModel):
     question: str
 
+class GraphQuestionRequest(BaseModel):
+    question: str
 
 # ========================================
 # ROOT
@@ -95,6 +102,63 @@ def ask_question(request: QuestionRequest):
         "sources": sources
     }
 
+
+@app.post("/graph-ask")
+def graph_ask(request: GraphQuestionRequest):
+
+    question = request.question.strip()
+
+    if not question:
+        return {
+            "error": "Question cannot be empty"
+        }
+
+    # Graph RAG logic
+    result = graph_retriever(question)
+
+    return {
+        "question": question,
+        "answer": result["answer"],
+        "sources": result.get("sources", [])
+    }
+
+@app.get("/graph")
+def get_knowledge_graph():
+
+    graph = graph_retriever.get_graph()
+
+    nodes = [
+        {
+            "id": str(node),
+            "label": str(node)
+        }
+        for node in graph.nodes
+    ]
+
+    edges = []
+
+    for edge in graph.edges:
+
+        # If your graph edges contain relationship information
+        if isinstance(edge, dict):
+            edges.append({
+                "source": str(edge.get("source")),
+                "target": str(edge.get("target")),
+                "label": str(edge.get("relationship", "related"))
+            })
+
+        else:
+            # For simple edge tuples
+            edges.append({
+                "source": str(edge[0]),
+                "target": str(edge[1]),
+                "label": "related"
+            })
+
+    return {
+        "nodes": nodes,
+        "edges": edges
+    }
 
 # ========================================
 # UPLOAD PDF
@@ -166,6 +230,11 @@ async def upload_pdf(
     number_of_chunks = add_documents(
         chunks,
         embeddings
+    )
+
+    # Build knowledge graph
+    number_of_relationships = build_graph(
+        chunks
     )
 
 

@@ -1,28 +1,33 @@
 import networkx as nx
 
-# Knowledge graph
+
 graph = nx.MultiDiGraph()
 
 
-def add_relationship(source, relationship, target):
+def add_relationship(
+    source_entity,
+    relationship,
+    target_entity,
+    source_file=None,
+    page=None
+):
     """
-    Add a relationship between two entities.
+    Add a relationship to the knowledge graph.
     """
 
-    graph.add_node(source)
-    graph.add_node(target)
+    graph.add_node(source_entity)
+    graph.add_node(target_entity)
 
     graph.add_edge(
-        source,
-        target,
-        relationship=relationship
+        source_entity,
+        target_entity,
+        relationship=relationship,
+        source_file=source_file,
+        page=page
     )
 
 
 def get_related_entities(entity):
-    """
-    Return entities directly connected to the given entity.
-    """
 
     if entity not in graph:
         return []
@@ -33,17 +38,17 @@ def get_related_entities(entity):
         entity,
         data=True
     ):
+
         results.append({
             "entity": target,
-            "relationship": data["relationship"]
+            "relationship": data["relationship"],
+            "source": data.get("source_file"),
+            "page": data.get("page")
         })
 
     return results
 
 
 def get_graph():
-    """
-    Return the complete knowledge graph.
-    """
 
     return graph

@@ -6,8 +6,6 @@ from backend.graph_rag.graph_store import add_relationship
 def extract_relationships(text):
     """
     Extract simple relationships from text.
-
-    This is an initial rule-based Graph RAG implementation.
     """
 
     relationships = []
@@ -23,9 +21,6 @@ def extract_relationships(text):
 
         if not sentence:
             continue
-
-        # Example:
-        # "Hypertension increases the risk of stroke"
 
         pattern = re.search(
             r"(.+?)\s+(increases the risk of|causes|leads to|associated with)\s+(.+)",
@@ -63,7 +58,9 @@ def build_graph(chunks):
             add_relationship(
                 item["source"],
                 item["relationship"],
-                item["target"]
+                item["target"],
+                source_file=chunk.get("source"),
+                page=chunk.get("page")
             )
 
             total_relationships += 1

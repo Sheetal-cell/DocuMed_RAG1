@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 
 import "./App.css";
+import ForceGraph2D from "react-force-graph-2d";
 
 interface Source {
   source: string;
@@ -46,6 +47,40 @@ function App() {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadStatus, setUploadStatus] = useState("");
   const [uploadedFile, setUploadedFile] = useState<string[]>([]);
+
+  const [showGraph, setShowGraph] = useState(false);
+
+const [graphData, setGraphData] = useState<{
+  nodes: { id: string; label?: string }[];
+  links: { source: string; target: string; label?: string }[];
+}>({
+  nodes: [],
+  links: [],
+});
+
+const loadGraph = async () => {
+  try {
+    const response = await fetch("http://127.0.0.1:8000/graph");
+
+    if (!response.ok) {
+      throw new Error("Failed to load graph");
+    }
+
+    const data = await response.json();
+
+    console.log("Graph API response:", data);
+
+    setGraphData({
+      nodes: data.nodes || [],
+      links: data.edges || data.links || [],
+    });
+
+    setShowGraph(true);
+
+  } catch (error) {
+    console.error("Graph loading error:", error);
+  }
+};
 
   const uploadFiles = async (files: File[]) => {
   if (!files.length) return;
@@ -244,6 +279,13 @@ function App() {
     }}
   />
 </label>
+
+<button
+  onClick={loadGraph}
+  className="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition"
+>
+  Knowledge Graph
+</button>
 
 {uploading && (
   <div className="upload-progress">
@@ -530,6 +572,7 @@ function App() {
                 </div>
 
               ))}
+              
 
               {loading && (
 
@@ -561,6 +604,48 @@ function App() {
             </div>
 
           )}
+
+          {showGraph && (
+  <div className="knowledge-graph">
+
+    <div className="knowledge-graph-header">
+
+      <div>
+        <h2>Knowledge Graph</h2>
+
+        <p>
+          Relationships extracted from your uploaded documents
+        </p>
+      </div>
+
+      <button
+        onClick={() => setShowGraph(false)}
+        className="graph-close-button"
+      >
+        Close
+      </button>
+
+    </div>
+
+    <div className="knowledge-graph-container">
+
+      <ForceGraph2D
+        graphData={graphData}
+        nodeLabel="label"
+        linkLabel="label"
+        nodeAutoColorBy="id"
+        linkDirectionalArrowLength={6}
+        linkDirectionalArrowRelPos={1}
+        nodeRelSize={6}
+        cooldownTicks={100}
+        width={900}
+        height={600}
+      />
+
+    </div>
+
+  </div>
+)}
 
         </section>
 
