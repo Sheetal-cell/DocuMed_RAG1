@@ -17,7 +17,8 @@ import {
 
 import "./App.css";
 import ForceGraph2D from "react-force-graph-2d";
-
+const API_BASE_URL =
+  import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
 interface Source {
   source: string;
   page: number;
@@ -60,7 +61,7 @@ const [graphData, setGraphData] = useState<{
 
 const loadGraph = async () => {
   try {
-    const response = await fetch("http://127.0.0.1:8000/graph");
+    const response = await fetch(`${API_BASE_URL}/graph`);
 
     if (!response.ok) {
       throw new Error("Failed to load graph");
@@ -100,7 +101,7 @@ const loadGraph = async () => {
 
       setUploadStatus(`Uploading ${file.name}...`);
 
-      const response = await fetch("http://127.0.0.1:8000/upload", {
+      const response = await fetch(`${API_BASE_URL}/upload`, {
         method: "POST",
         body: formData,
       });
@@ -154,7 +155,7 @@ const loadGraph = async () => {
     setLoading(true);
 
     try {
-      const response = await fetch("http://127.0.0.1:8000/ask", {
+      const response = await fetch(`${API_BASE_URL}/ask`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

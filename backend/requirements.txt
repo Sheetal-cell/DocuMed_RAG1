@@ -5,3 +5,6 @@ pypdf
 chromadb
 sentence-transformers
 python-dotenv
+networkx
+torch
+transformers

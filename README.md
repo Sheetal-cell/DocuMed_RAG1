@@ -368,7 +368,7 @@ PowerShell:
 
 ```powershell
 Invoke-RestMethod `
-  -Uri "http://127.0.0.1:8000/ask" `
+  -Uri "${API_BASE_URL}/ask" `
   -Method POST `
   -ContentType "application/json" `
   -Body '{"question":"What is the HEARTS technical package and what is its purpose?"}'
